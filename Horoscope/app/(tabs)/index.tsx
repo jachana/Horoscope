@@ -1,11 +1,14 @@
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ZodiacImage } from '../../components/ZodiacImage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
+import { useHoroscope } from '../../hooks/useHoroscope';
+import { ZodiacSign } from '../../types/horoscope';
+import { FontAwesome } from '@expo/vector-icons';
 
-const getZodiacSign = (date: Date): string => {
+const getZodiacSign = (date: Date): ZodiacSign => {
   const month = date.getMonth() + 1; // JavaScript months are 0-11
   const day = date.getDate();
 
@@ -27,6 +30,15 @@ export default function DailyHoroscopeScreen() {
   const [birthday, setBirthday] = useState(new Date());
   const [showPicker, setShowPicker] = useState(Platform.OS === 'ios');
   const zodiacSign = getZodiacSign(birthday);
+  const { loading, error, reading, getReading } = useHoroscope();
+
+  useEffect(() => {
+    getReading(zodiacSign);
+  }, [zodiacSign]);
+
+  const handleRefresh = () => {
+    getReading(zodiacSign);
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -53,7 +65,7 @@ export default function DailyHoroscopeScreen() {
           />
         )}
         {Platform.OS === 'android' && (
-          <Text 
+          <Text
             style={[styles.birthdayLabel, { color: '#6B4DE6' }]}
             onPress={() => setShowPicker(true)}
           >
@@ -63,14 +75,33 @@ export default function DailyHoroscopeScreen() {
       </View>
 
       <View style={styles.readingContainer}>
-        <Text style={styles.readingTitle}>Your Daily Reading</Text>
+        <View style={styles.readingHeader}>
+          <Text style={styles.readingTitle}>Your Daily Reading</Text>
+          <TouchableOpacity onPress={handleRefresh} style={styles.refreshButton}>
+            <FontAwesome name="refresh" size={20} color="#6B4DE6" />
+          </TouchableOpacity>
+        </View>
         <View style={styles.selectedSignHeader}>
           <ZodiacImage sign={zodiacSign} size={32} />
           <Text style={styles.selectedSignText}>{zodiacSign}</Text>
         </View>
-        <Text style={styles.readingText}>
-          Loading your personalized horoscope...
-        </Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#6B4DE6" />
+            <Text style={styles.loadingText}>Consulting the stars...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={handleRefresh} style={styles.retryButton}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : reading ? (
+          <Text style={styles.readingText}>{reading.reading}</Text>
+        ) : (
+          <Text style={styles.readingText}>Select your birthday to see your horoscope</Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -114,11 +145,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eee',
   },
+  readingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
   readingTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
     color: '#333',
+  },
+  refreshButton: {
+    padding: 8,
   },
   selectedSignHeader: {
     flexDirection: 'row',
@@ -138,5 +177,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#666',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff4444',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  retryButton: {
+    backgroundColor: '#6B4DE6',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
