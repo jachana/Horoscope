@@ -25,6 +25,7 @@ const getZodiacSign = (date: Date): string => {
 
 export default function DailyHoroscopeScreen() {
   const [birthday, setBirthday] = useState(new Date());
+  const [showPicker, setShowPicker] = useState(Platform.OS === 'ios');
   const zodiacSign = getZodiacSign(birthday);
 
   return (
@@ -36,16 +37,29 @@ export default function DailyHoroscopeScreen() {
 
       <View style={styles.birthdayContainer}>
         <Text style={styles.birthdayLabel}>Select your birthday:</Text>
-        <DateTimePicker
-          value={birthday}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, selectedDate) => {
-            if (selectedDate) {
-              setBirthday(selectedDate);
-            }
-          }}
-        />
+        {(showPicker || Platform.OS === 'ios') && (
+          <DateTimePicker
+            value={birthday}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(event, selectedDate) => {
+              if (Platform.OS === 'android') {
+                setShowPicker(false);
+              }
+              if (selectedDate) {
+                setBirthday(selectedDate);
+              }
+            }}
+          />
+        )}
+        {Platform.OS === 'android' && (
+          <Text 
+            style={[styles.birthdayLabel, { color: '#6B4DE6' }]}
+            onPress={() => setShowPicker(true)}
+          >
+            {birthday.toLocaleDateString()}
+          </Text>
+        )}
       </View>
 
       <View style={styles.readingContainer}>
