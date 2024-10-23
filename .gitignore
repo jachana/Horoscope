@@ -1,0 +1,17 @@
+.aider*
+# Project directories
+Horoscope/
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*
