@@ -32,6 +32,9 @@ export const useGoogleAuth = () => {
             web: 'http://localhost:19006', // Default Expo web port
             default: undefined, // Let Expo handle mobile redirects
         }),
+        webOptions: {
+            popup: false // Use redirect instead of popup to avoid COOP issues
+        }
     });
 
     if (request) {
