@@ -1,9 +1,10 @@
 import { StyleSheet, View, ScrollView, TextInput, TouchableOpacity, Platform, ImageBackground } from 'react-native';
 import { Text } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ZodiacImage } from '../../components/ZodiacImage';
 import { ZodiacSign } from '../../types/horoscope';
+import { useProfile } from '../../contexts/ProfileContext';
 
 const zodiacColors: Record<ZodiacSign, string> = {
   Aries: '#FF4136',
@@ -83,6 +84,7 @@ const WebDatePicker = ({ value, onChange }: { value: Date; onChange: (date: Date
 };
 
 export default function ProfileScreen() {
+  const { profile, updateProfile } = useProfile();
   const [birthday, setBirthday] = useState(new Date());
   const [showPicker, setShowPicker] = useState(Platform.OS === 'ios');
   const [birthTime, setBirthTime] = useState('');
@@ -91,12 +93,60 @@ export default function ProfileScreen() {
   const [heritage, setHeritage] = useState('');
   const [relationshipStatus, setRelationshipStatus] = useState('');
 
+  // Load saved profile data
+  useEffect(() => {
+    if (profile) {
+      if (profile.birthDate) {
+        setBirthday(new Date(profile.birthDate));
+      }
+      if (profile.birthTime) {
+        setBirthTime(profile.birthTime);
+      }
+      if (profile.placeOfBirth) {
+        setBirthPlace(profile.placeOfBirth);
+      }
+      if (profile.lifeGoals) {
+        setLifeGoals(profile.lifeGoals);
+      }
+      if (profile.heritage) {
+        setHeritage(profile.heritage);
+      }
+      if (profile.relationshipStatus) {
+        setRelationshipStatus(profile.relationshipStatus);
+      }
+    }
+  }, [profile]);
+
+  // Update profile when any field changes
+  const handleFieldUpdate = async (field: string, value: string) => {
+    try {
+      await updateProfile({
+        [field]: value
+      });
+    } catch (error) {
+      console.error(`Failed to update ${field}:`, error);
+    }
+  };
+
+  // Update profile when birthday changes
+  const handleBirthdayChange = async (date: Date) => {
+    setBirthday(date);
+    try {
+      await updateProfile({
+        birthDate: date.toISOString(),
+        zodiacSign: getZodiacSign(date)
+      });
+    } catch (error) {
+      console.error('Failed to update birth date:', error);
+    }
+  };
+
   const zodiacSign = getZodiacSign(birthday);
   const backgroundImage = require('../../assets/images/Backgrounds/Aries.jpg');
 
   const renderDatePicker = () => {
     if (Platform.OS === 'web') {
-      return <WebDatePicker value={birthday} onChange={setBirthday} />;
+      return <WebDatePicker value={birthday} onChange={handleBirthdayChange} />;
     }
 
     return (
@@ -111,7 +161,7 @@ export default function ProfileScreen() {
                 setShowPicker(false);
               }
               if (selectedDate) {
-                setBirthday(selectedDate);
+                handleBirthdayChange(selectedDate);
               }
             }}
           />
@@ -150,13 +200,19 @@ export default function ProfileScreen() {
             <InputField
               label="Time of Birth"
               value={birthTime}
-              onChangeText={setBirthTime}
+              onChangeText={(text) => {
+                setBirthTime(text);
+                handleFieldUpdate('birthTime', text);
+              }}
               placeholder="e.g., 14:30"
             />
             <InputField
               label="Place of Birth"
               value={birthPlace}
-              onChangeText={setBirthPlace}
+              onChangeText={(text) => {
+                setBirthPlace(text);
+                handleFieldUpdate('placeOfBirth', text);
+              }}
               placeholder="City, Country"
             />
           </View>
@@ -166,19 +222,28 @@ export default function ProfileScreen() {
             <InputField
               label="Heritage"
               value={heritage}
-              onChangeText={setHeritage}
+              onChangeText={(text) => {
+                setHeritage(text);
+                handleFieldUpdate('heritage', text);
+              }}
               placeholder="Cultural background"
             />
             <InputField
               label="Relationship Status"
               value={relationshipStatus}
-              onChangeText={setRelationshipStatus}
+              onChangeText={(text) => {
+                setRelationshipStatus(text);
+                handleFieldUpdate('relationshipStatus', text);
+              }}
               placeholder="Single, Married, etc."
             />
             <InputField
               label="Life Goals"
               value={lifeGoals}
-              onChangeText={setLifeGoals}
+              onChangeText={(text) => {
+                setLifeGoals(text);
+                handleFieldUpdate('lifeGoals', text);
+              }}
               placeholder="Share your aspirations..."
               multiline={true}
             />

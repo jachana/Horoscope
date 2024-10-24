@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { AuthProvider } from '../contexts/AuthContext';
+import { ProfileProvider } from '../contexts/ProfileContext';
 
 export {
   ErrorBoundary,
@@ -40,22 +41,24 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen
-            name="login"
-            options={{
-              animation: 'none'
-            }}
-          />
-          <Stack.Screen
-            name="(tabs)"
-            options={{
-              animation: 'none'
-            }}
-          />
-        </Stack>
-      </ThemeProvider>
+      <ProfileProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen
+              name="login"
+              options={{
+                animation: 'none'
+              }}
+            />
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                animation: 'none'
+              }}
+            />
+          </Stack>
+        </ThemeProvider>
+      </ProfileProvider>
     </AuthProvider>
   );
 }

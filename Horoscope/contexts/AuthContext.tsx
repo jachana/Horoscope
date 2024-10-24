@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, getUser, getAuthToken, storeAuthToken, storeUser, logout, useGoogleAuth } from '../services/authService';
-import { Alert, Platform } from 'react-native';
-import { jwtDecode } from "jwt-decode";
+import { Alert } from 'react-native';
 
 interface AuthContextType {
     user: User | null;
@@ -81,86 +80,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (result?.type === 'success') {
                 const { authentication } = result;
 
-                if (Platform.OS === 'web') {
-                    // For web, we get an ID token
-                    // Handle both access token and ID token cases
-                    const token = authentication?.accessToken || authentication?.idToken;
-                    if (!token) {
-                        throw new Error('No authentication token received');
-                    }
-
-                    // Store the token
-                    await storeAuthToken(token);
-
-                    let user: User;
-                    if (authentication?.idToken) {
-                        // If we have an ID token, decode it
-                        const decodedToken: any = jwtDecode(authentication.idToken);
-                        user = {
-                            id: decodedToken.sub,
-                            email: decodedToken.email,
-                            name: decodedToken.name,
-                            picture: decodedToken.picture,
-                        };
-                    } else {
-                        // If we only have access token, fetch user info
-                        const userInfoResponse = await fetch(
-                            'https://www.googleapis.com/userinfo/v2/me',
-                            {
-                                headers: { Authorization: `Bearer ${token}` },
-                            }
-                        );
-
-                        if (!userInfoResponse.ok) {
-                            throw new Error('Failed to fetch user info');
-                        }
-
-                        const userData = await userInfoResponse.json();
-                        user = {
-                            id: userData.id,
-                            email: userData.email,
-                            name: userData.name,
-                            picture: userData.picture,
-                        };
-                    }
-
-                    console.log('[Auth Debug] User info from ID token:', user.email);
-                    await storeUser(user);
-                    setUser(user);
-                } else {
-                // For native platforms, we get an access token
-                    if (!authentication?.accessToken) {
-                        throw new Error('No access token received');
-                    }
-
-                    await storeAuthToken(authentication.accessToken);
-
-                    console.log('[Auth Debug] Fetching user info...');
-                    const userInfoResponse = await fetch(
-                        'https://www.googleapis.com/userinfo/v2/me',
-                        {
-                            headers: { Authorization: `Bearer ${authentication.accessToken}` },
-                        }
-                    );
-
-                    if (!userInfoResponse.ok) {
-                        throw new Error('Failed to fetch user info');
-                    }
-
-                    const userData = await userInfoResponse.json();
-                    console.log('[Auth Debug] User info received:', userData.email);
-
-                    const user: User = {
-                        id: userData.id,
-                        email: userData.email,
-                        name: userData.name,
-                        picture: userData.picture,
-                    };
-
-                    await storeUser(user);
-                    setUser(user);
+                if (!authentication?.accessToken) {
+                    throw new Error('No access token received');
                 }
 
+                console.log('[Auth Debug] Storing auth token...');
+                await storeAuthToken(authentication.accessToken);
+
+                console.log('[Auth Debug] Fetching user info...');
+                const userInfoResponse = await fetch(
+                    'https://www.googleapis.com/userinfo/v2/me',
+                    {
+                        headers: { Authorization: `Bearer ${authentication.accessToken}` },
+                    }
+                );
+
+                if (!userInfoResponse.ok) {
+                    throw new Error('Failed to fetch user info');
+                }
+
+                const userData = await userInfoResponse.json();
+                console.log('[Auth Debug] User info received:', userData.email);
+
+                const user: User = {
+                    id: userData.id,
+                    email: userData.email,
+                    name: userData.name,
+                    picture: userData.picture,
+                };
+
+                console.log('[Auth Debug] Storing user data...');
+                await storeUser(user);
+                setUser(user);
                 setIsGuest(false);
             } else {
                 console.log('[Auth Debug] Authentication cancelled or failed');
