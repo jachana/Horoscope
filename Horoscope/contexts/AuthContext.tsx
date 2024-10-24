@@ -83,21 +83,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 if (Platform.OS === 'web') {
                     // For web, we get an ID token
-                    if (!authentication?.idToken) {
-                        throw new Error('No ID token received');
+                    // Handle both access token and ID token cases
+                    const token = authentication?.accessToken || authentication?.idToken;
+                    if (!token) {
+                        throw new Error('No authentication token received');
                     }
 
-                    // Store the ID token
-                    await storeAuthToken(authentication.idToken);
+                    // Store the token
+                    await storeAuthToken(token);
 
-                    // Decode the ID token to get user info
-                    const decodedToken: any = jwtDecode(authentication.idToken);
-                    const user: User = {
-                        id: decodedToken.sub,
-                        email: decodedToken.email,
-                        name: decodedToken.name,
-                        picture: decodedToken.picture,
-                    };
+                    let user: User;
+                    if (authentication?.idToken) {
+                        // If we have an ID token, decode it
+                        const decodedToken: any = jwtDecode(authentication.idToken);
+                        user = {
+                            id: decodedToken.sub,
+                            email: decodedToken.email,
+                            name: decodedToken.name,
+                            picture: decodedToken.picture,
+                        };
+                    } else {
+                        // If we only have access token, fetch user info
+                        const userInfoResponse = await fetch(
+                            'https://www.googleapis.com/userinfo/v2/me',
+                            {
+                                headers: { Authorization: `Bearer ${token}` },
+                            }
+                        );
+
+                        if (!userInfoResponse.ok) {
+                            throw new Error('Failed to fetch user info');
+                        }
+
+                        const userData = await userInfoResponse.json();
+                        user = {
+                            id: userData.id,
+                            email: userData.email,
+                            name: userData.name,
+                            picture: userData.picture,
+                        };
+                    }
 
                     console.log('[Auth Debug] User info from ID token:', user.email);
                     await storeUser(user);

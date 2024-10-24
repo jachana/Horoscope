@@ -40,9 +40,8 @@ export const useGoogleAuth = () => {
         }),
         // Configure auth based on platform
         ...(Platform.OS === 'web' ? {
-            responseType: "id_token",
+            responseType: "token id_token",
             usePKCE: false,
-            // Use Google's own popup mechanism
             customParams: {
                 prompt: "select_account",
                 access_type: "online",
