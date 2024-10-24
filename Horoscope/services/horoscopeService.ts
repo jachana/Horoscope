@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { ENV } from '../config/env';
 import { HoroscopeReading, OpenRouterResponse, OpenRouterError, ZodiacSign } from '../types/horoscope';
+import { UserProfile, checkSubscriptionAccess } from './profileService';
 
 const headers = {
     'HTTP-Referer': 'https://github.com/juliomuhlbauer',
@@ -9,15 +10,25 @@ const headers = {
     'Content-Type': 'application/json',
 };
 
-export async function generateHoroscopeReading(sign: ZodiacSign): Promise<HoroscopeReading> {
+class SubscriptionError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'SubscriptionError';
+    }
+}
+
+export async function generateHoroscopeReading(sign: ZodiacSign, profile: UserProfile | null): Promise<HoroscopeReading> {
     try {
         if (!ENV.OPENROUTER_API_KEY) {
             throw new Error('OpenRouter API key is not configured');
         }
 
-        const prompt = `Generate a detailed daily horoscope reading for ${sign} in JSON format with the following structure:
+        const isPremium = checkSubscriptionAccess(profile);
+        const prompt = `Generate a ${isPremium ? 'detailed premium' : 'basic'} daily horoscope reading for ${sign} in JSON format with the following structure:
         {
-            "reading": "Main horoscope reading (100-150 words about love, career, and personal growth)",
+            "reading": "${isPremium ? 'Detailed 150-200 word' : 'Brief 50-word'} horoscope reading about ${isPremium ? 'love, career, personal growth, and spiritual guidance' : 'general daily outlook'
+            }",
+            ${isPremium ? `
             "luckyNumbers": ["three numbers between 1-100"],
             "planetaryPositions": [
                 {"planet": "name of planet", "position": "current astrological position"}
@@ -26,15 +37,18 @@ export async function generateHoroscopeReading(sign: ZodiacSign): Promise<Horosc
             "compatibleSigns": ["three most compatible zodiac signs for today"],
             "luckyColor": "color that brings luck today",
             "bestTimeForDecisions": "best time period for making important decisions today"
+            ` : `
+            "luckyNumbers": ["one number between 1-100"]
+            `}
         }
-        Make it sound professional and insightful.`;
+        Make it sound ${isPremium ? 'professional, detailed, and insightful' : 'concise and general'}.`;
 
         const payload = {
             model: 'mistralai/mistral-7b-instruct',
             messages: [
                 {
                     role: 'system',
-                    content: 'You are a professional astrologer who provides detailed daily horoscope readings. Always respond in valid JSON format.'
+                    content: 'You are a professional astrologer who provides daily horoscope readings. Always respond in valid JSON format.'
                 },
                 {
                     role: 'user',
@@ -42,7 +56,7 @@ export async function generateHoroscopeReading(sign: ZodiacSign): Promise<Horosc
                 },
             ],
             temperature: 0.7,
-            max_tokens: 500,
+            max_tokens: isPremium ? 500 : 200,
         };
 
         console.log('Making API request with headers:', {
@@ -72,16 +86,23 @@ export async function generateHoroscopeReading(sign: ZodiacSign): Promise<Horosc
 
         try {
             const parsedContent = JSON.parse(content);
-            return {
+            const reading: HoroscopeReading = {
                 sign,
                 reading: parsedContent.reading,
                 date: new Date().toISOString().split('T')[0],
-                luckyNumbers: parsedContent.luckyNumbers,
-                planetaryPositions: parsedContent.planetaryPositions,
-                compatibleSigns: parsedContent.compatibleSigns,
-                luckyColor: parsedContent.luckyColor,
-                bestTimeForDecisions: parsedContent.bestTimeForDecisions,
+                luckyNumbers: parsedContent.luckyNumbers || [],
+                planetaryPositions: isPremium ? parsedContent.planetaryPositions : [],
+                compatibleSigns: isPremium ? parsedContent.compatibleSigns : [],
+                luckyColor: isPremium ? parsedContent.luckyColor : '',
+                bestTimeForDecisions: isPremium ? parsedContent.bestTimeForDecisions : '',
             };
+
+            // Add premium feature notice for free users
+            if (!isPremium) {
+                reading.reading += '\n\n⭐ Upgrade to Premium for detailed readings including planetary positions, compatible signs, and more!';
+            }
+
+            return reading;
         } catch (parseError) {
             console.error('Failed to parse AI response:', parseError);
             throw new Error('Failed to parse horoscope data');
@@ -112,4 +133,24 @@ export async function generateHoroscopeReading(sign: ZodiacSign): Promise<Horosc
 
         throw error;
     }
+}
+
+export async function generateDreamReading(description: string, profile: UserProfile | null): Promise<string> {
+    if (!checkSubscriptionAccess(profile)) {
+        throw new SubscriptionError('Dream readings are a premium feature. Upgrade to access detailed dream interpretations!');
+    }
+
+    // Implementation for premium dream reading
+    // TODO: Implement dream reading logic
+    return "Premium dream reading feature coming soon!";
+}
+
+export async function generatePalmReading(profile: UserProfile | null): Promise<string> {
+    if (!checkSubscriptionAccess(profile)) {
+        throw new SubscriptionError('Palm readings are a premium feature. Upgrade to access personalized palm interpretations!');
+    }
+
+    // Implementation for premium palm reading
+    // TODO: Implement palm reading logic
+    return "Premium palm reading feature coming soon!";
 }

@@ -1,6 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+export type SubscriptionTier = 'free' | 'premium';
+
 export interface UserProfile {
     userId: string;
     zodiacSign?: string;
@@ -13,6 +15,10 @@ export interface UserProfile {
     preferences?: {
         notifications: boolean;
         theme: 'light' | 'dark' | 'system';
+    };
+    subscription: {
+        tier: SubscriptionTier;
+        expiresAt?: string; // ISO date string
     };
     lastUpdated: string;
 }
@@ -77,10 +83,15 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
     try {
         console.log('[Profile Debug] Saving profile for user:', profile.userId);
         const key = getProfileKey(profile.userId);
-        await storage.setItem(key, JSON.stringify({
+
+        // Ensure subscription is set with at least a default value
+        const profileWithSubscription = {
             ...profile,
+            subscription: profile.subscription || { tier: 'free' },
             lastUpdated: new Date().toISOString()
-        }));
+        };
+
+        await storage.setItem(key, JSON.stringify(profileWithSubscription));
         console.log('[Profile Debug] Profile saved successfully');
     } catch (error) {
         console.error('[Profile Debug] Error saving profile:', error);
@@ -100,6 +111,12 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         }
 
         const profile = JSON.parse(profileData);
+
+        // Ensure subscription exists in older profiles
+        if (!profile.subscription) {
+            profile.subscription = { tier: 'free' };
+        }
+
         console.log('[Profile Debug] Profile retrieved successfully');
         return profile;
     } catch (error) {
@@ -116,10 +133,25 @@ export const updateUserProfile = async (
         console.log('[Profile Debug] Updating profile for user:', userId);
         const currentProfile = await getUserProfile(userId);
 
-        const updatedProfile: UserProfile = {
+        // Ensure we have a valid current profile
+        const baseProfile: UserProfile = currentProfile || {
             userId,
-            ...currentProfile,
+            subscription: { tier: 'free' },
+            lastUpdated: new Date().toISOString()
+        };
+
+        // Handle subscription updates carefully
+        const updatedSubscription = updates.subscription
+            ? {
+                tier: updates.subscription.tier || baseProfile.subscription.tier,
+                expiresAt: updates.subscription.expiresAt
+            }
+            : baseProfile.subscription;
+
+        const updatedProfile: UserProfile = {
+            ...baseProfile,
             ...updates,
+            subscription: updatedSubscription,
             lastUpdated: new Date().toISOString()
         };
 
@@ -142,4 +174,18 @@ export const deleteUserProfile = async (userId: string): Promise<void> => {
         console.error('[Profile Debug] Error deleting profile:', error);
         throw error;
     }
+};
+
+export const checkSubscriptionAccess = (profile: UserProfile | null): boolean => {
+    if (!profile) return false;
+
+    const { subscription } = profile;
+    if (subscription.tier === 'premium') {
+        // If there's an expiration date, check if it's still valid
+        if (subscription.expiresAt) {
+            return new Date(subscription.expiresAt) > new Date();
+        }
+        return true; // Premium with no expiration
+    }
+    return false; // Free tier
 };

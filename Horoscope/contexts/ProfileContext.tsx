@@ -44,6 +44,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 // Initialize empty profile if none exists
                 const newProfile: UserProfile = {
                     userId,
+                    subscription: { tier: 'free' }, // Initialize with free tier
                     lastUpdated: new Date().toISOString()
                 };
                 setProfile(newProfile);

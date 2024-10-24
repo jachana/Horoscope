@@ -1,19 +1,56 @@
-import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, ImageBackground } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, ImageBackground, Alert } from 'react-native';
 import { Text } from 'react-native';
 import { useEffect } from 'react';
 import { ZodiacImage } from '../../components/ZodiacImage';
 import { useHoroscope } from '../../hooks/useHoroscope';
 import { FontAwesome } from '@expo/vector-icons';
+import { useProfile } from '../../contexts/ProfileContext';
+import { checkSubscriptionAccess } from '../../services/profileService';
 
-const InfoSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>{title}</Text>
-        {children}
-    </View>
+const PremiumFeature = ({ children, onUpgrade }: { children: React.ReactNode; onUpgrade: () => void }) => (
+    <TouchableOpacity onPress={onUpgrade} style={styles.premiumFeatureContainer}>
+        <View style={styles.premiumLockContainer}>
+            <FontAwesome name="lock" size={20} color="#6B4DE6" />
+            <Text style={styles.premiumText}>Premium Feature</Text>
+        </View>
+        <View style={styles.premiumPreview}>
+            {children}
+        </View>
+        <TouchableOpacity style={styles.upgradeButton} onPress={onUpgrade}>
+            <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
+        </TouchableOpacity>
+    </TouchableOpacity>
 );
+
+const InfoSection = ({ title, children, isPremium, onUpgrade }: {
+    title: string;
+    children: React.ReactNode;
+    isPremium?: boolean;
+    onUpgrade?: () => void;
+}) => {
+    if (isPremium) {
+        return (
+            <PremiumFeature onUpgrade={onUpgrade!}>
+                <View style={styles.infoSection}>
+                    <Text style={styles.infoTitle}>{title}</Text>
+                    {children}
+                </View>
+            </PremiumFeature>
+        );
+    }
+
+    return (
+        <View style={styles.infoSection}>
+            <Text style={styles.infoTitle}>{title}</Text>
+            {children}
+        </View>
+    );
+};
 
 export default function DailyHoroscopeScreen() {
     const { loading, error, reading, getReading } = useHoroscope();
+    const { profile } = useProfile();
+    const isPremium = checkSubscriptionAccess(profile);
 
     useEffect(() => {
         getReading('Aries'); // This will need to be updated to use the zodiac sign from profile
@@ -21,6 +58,26 @@ export default function DailyHoroscopeScreen() {
 
     const handleRefresh = () => {
         getReading('Aries'); // This will need to be updated to use the zodiac sign from profile
+    };
+
+    const handleUpgrade = () => {
+        Alert.alert(
+            'Upgrade to Premium',
+            'Get access to detailed readings, planetary positions, compatibility insights, and more!',
+            [
+                {
+                    text: 'Not Now',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Learn More',
+                    onPress: () => {
+                        // TODO: Navigate to subscription screen
+                        Alert.alert('Coming Soon', 'Premium subscriptions will be available soon!');
+                    }
+                }
+            ]
+        );
     };
 
     const backgroundImage = require('../../assets/images/Backgrounds/Aries.jpg');
@@ -40,7 +97,11 @@ export default function DailyHoroscopeScreen() {
                     </View>
                 </InfoSection>
 
-                <InfoSection title="Planetary Positions">
+                <InfoSection
+                    title="Planetary Positions"
+                    isPremium={!isPremium}
+                    onUpgrade={handleUpgrade}
+                >
                     {reading.planetaryPositions.map((position, index) => (
                         <View key={index} style={styles.planetRow}>
                             <Text style={styles.planetName}>{position.planet}</Text>
@@ -49,7 +110,11 @@ export default function DailyHoroscopeScreen() {
                     ))}
                 </InfoSection>
 
-                <InfoSection title="Compatible Signs">
+                <InfoSection
+                    title="Compatible Signs"
+                    isPremium={!isPremium}
+                    onUpgrade={handleUpgrade}
+                >
                     <View style={styles.compatibleSignsContainer}>
                         {reading.compatibleSigns.map((sign, index) => (
                             <View key={index} style={styles.compatibleSignBubble}>
@@ -60,14 +125,22 @@ export default function DailyHoroscopeScreen() {
                     </View>
                 </InfoSection>
 
-                <InfoSection title="Lucky Color">
+                <InfoSection
+                    title="Lucky Color"
+                    isPremium={!isPremium}
+                    onUpgrade={handleUpgrade}
+                >
                     <View style={styles.colorContainer}>
                         <View style={[styles.colorBox, { backgroundColor: reading.luckyColor.toLowerCase() }]} />
                         <Text style={styles.colorText}>{reading.luckyColor}</Text>
                     </View>
                 </InfoSection>
 
-                <InfoSection title="Best Time for Decisions">
+                <InfoSection
+                    title="Best Time for Decisions"
+                    isPremium={!isPremium}
+                    onUpgrade={handleUpgrade}
+                >
                     <Text style={styles.timeText}>{reading.bestTimeForDecisions}</Text>
                 </InfoSection>
             </>
@@ -92,6 +165,12 @@ export default function DailyHoroscopeScreen() {
                     <View style={styles.selectedSignHeader}>
                         <ZodiacImage sign="Aries" size={32} />
                         <Text style={styles.selectedSignText}>Aries</Text>
+                        {isPremium && (
+                            <View style={styles.premiumBadge}>
+                                <FontAwesome name="star" size={12} color="#FFD700" />
+                                <Text style={styles.premiumBadgeText}>Premium</Text>
+                            </View>
+                        )}
                     </View>
                     {loading ? (
                         <View style={styles.loadingContainer}>
@@ -178,6 +257,23 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         color: '#333',
         marginLeft: 10,
+        flex: 1,
+    },
+    premiumBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF7E6',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#FFD700',
+    },
+    premiumBadgeText: {
+        color: '#B8860B',
+        fontSize: 12,
+        fontWeight: '600',
+        marginLeft: 4,
     },
     readingText: {
         fontSize: 16,
@@ -297,5 +393,39 @@ const styles = StyleSheet.create({
     timeText: {
         fontSize: 16,
         color: '#333',
+    },
+    premiumFeatureContainer: {
+        marginTop: 15,
+        backgroundColor: 'rgba(248, 248, 248, 0.9)',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#6B4DE6',
+        overflow: 'hidden',
+    },
+    premiumLockContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F0EEFF',
+        padding: 8,
+    },
+    premiumText: {
+        color: '#6B4DE6',
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 8,
+    },
+    premiumPreview: {
+        opacity: 0.5,
+    },
+    upgradeButton: {
+        backgroundColor: '#6B4DE6',
+        padding: 12,
+        alignItems: 'center',
+    },
+    upgradeButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
