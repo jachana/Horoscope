@@ -18,12 +18,18 @@ export default function TabLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/login');
-    }
+    const checkAuth = async () => {
+      console.log('[TabLayout Debug] Checking auth state:', { isAuthenticated, isLoading });
+      if (!isLoading && !isAuthenticated) {
+        console.log('[TabLayout Debug] User not authenticated, navigating to login');
+        router.push('/login');
+      }
+    };
+
+    checkAuth();
   }, [isLoading, isAuthenticated]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading) {
     return null;
   }
 

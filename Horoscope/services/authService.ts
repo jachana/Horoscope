@@ -32,24 +32,13 @@ export const useGoogleAuth = () => {
 
     const [request, response, promptAsync] = Google.useAuthRequest({
         clientId,
-        scopes: ['profile', 'email'],
+        scopes: ['profile', 'email', 'openid'],
         redirectUri: Platform.select({
-            // Use the current origin for web
             web: window.location.origin,
             default: undefined,
         }),
-        // Configure auth based on platform
-        ...(Platform.OS === 'web' ? {
-            responseType: "token id_token",
-            usePKCE: false,
-            customParams: {
-                prompt: "select_account",
-                access_type: "online",
-            }
-        } : {
-            responseType: "code",
-            usePKCE: true
-        })
+        responseType: "token",
+        usePKCE: false
     });
 
     if (request) {
