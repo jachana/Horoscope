@@ -1,6 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { ENV } from '../config/env';
 
 const AUTH_KEY = 'auth_token';
@@ -16,18 +17,21 @@ export interface User {
 }
 
 export const useGoogleAuth = () => {
-    console.log('[Auth Debug] Initializing Google Auth with:', {
-        clientId: ENV.GOOGLE_CLIENT_ID,
-        androidClientId: ENV.GOOGLE_ANDROID_CLIENT_ID,
-        iosClientId: ENV.GOOGLE_IOS_CLIENT_ID
+    const clientId = Platform.select({
+        ios: ENV.GOOGLE_IOS_CLIENT_ID,
+        android: ENV.GOOGLE_ANDROID_CLIENT_ID,
+        default: ENV.GOOGLE_CLIENT_ID,
     });
 
+    console.log('[Auth Debug] Using client ID:', clientId);
+
     const [request, response, promptAsync] = Google.useAuthRequest({
-        clientId: ENV.GOOGLE_CLIENT_ID,
-        androidClientId: ENV.GOOGLE_ANDROID_CLIENT_ID,
-        iosClientId: ENV.GOOGLE_IOS_CLIENT_ID,
-        // Add these scopes for debugging
+        clientId,
         scopes: ['profile', 'email'],
+        redirectUri: Platform.select({
+            web: 'http://localhost:19006', // Default Expo web port
+            default: undefined, // Let Expo handle mobile redirects
+        }),
     });
 
     if (request) {
