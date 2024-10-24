@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, getUser, getAuthToken, storeAuthToken, storeUser, logout, useGoogleAuth } from '../services/authService';
+import { Alert, Platform } from 'react-native';
+import { jwtDecode } from "jwt-decode";
 
 interface AuthContextType {
     user: User | null;
@@ -29,22 +31,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isGuest, setIsGuest] = useState(false);
     const { promptAsync } = useGoogleAuth();
 
+    // Load user data on mount
     useEffect(() => {
         loadUser();
     }, []);
 
+    // Debug effect to monitor auth state changes
+    useEffect(() => {
+        console.log('[Auth Debug] Auth state updated:', {
+            user: user?.email,
+            isAuthenticated: !!user || isGuest,
+            isGuest,
+            isLoading
+        });
+    }, [user, isGuest, isLoading]);
+
     const loadUser = async () => {
         try {
+            console.log('[Auth Debug] Loading user data...');
             const token = await getAuthToken();
             if (token) {
                 const userData = await getUser();
                 if (userData) {
+                    console.log('[Auth Debug] User data loaded successfully:', userData.email);
                     setUser(userData);
                     setIsGuest(false);
+                } else {
+                    console.log('[Auth Debug] No user data found');
+                    await logout(); // Clear invalid token
                 }
             }
         } catch (error) {
-            console.error('Error loading user:', error);
+            console.error('[Auth Debug] Error loading user:', error);
+            Alert.alert('Error', 'Failed to load user data. Please try logging in again.');
+            await logout();
         } finally {
             setIsLoading(false);
         }
@@ -52,51 +72,101 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const signIn = async () => {
         try {
+            setIsLoading(true);
+            console.log('[Auth Debug] Starting Google sign in...');
+
             const result = await promptAsync();
+            console.log('[Auth Debug] Google sign in result:', result.type);
 
             if (result?.type === 'success') {
                 const { authentication } = result;
 
-                await storeAuthToken(authentication?.accessToken || '');
-
-                const userInfoResponse = await fetch(
-                    'https://www.googleapis.com/userinfo/v2/me',
-                    {
-                        headers: { Authorization: `Bearer ${authentication?.accessToken}` },
+                if (Platform.OS === 'web') {
+                    // For web, we get an ID token
+                    if (!authentication?.idToken) {
+                        throw new Error('No ID token received');
                     }
-                );
 
-                const userData = await userInfoResponse.json();
-                const user: User = {
-                    id: userData.id,
-                    email: userData.email,
-                    name: userData.name,
-                    picture: userData.picture,
-                };
+                    // Store the ID token
+                    await storeAuthToken(authentication.idToken);
 
-                await storeUser(user);
-                setUser(user);
+                    // Decode the ID token to get user info
+                    const decodedToken: any = jwtDecode(authentication.idToken);
+                    const user: User = {
+                        id: decodedToken.sub,
+                        email: decodedToken.email,
+                        name: decodedToken.name,
+                        picture: decodedToken.picture,
+                    };
+
+                    console.log('[Auth Debug] User info from ID token:', user.email);
+                    await storeUser(user);
+                    setUser(user);
+                } else {
+                // For native platforms, we get an access token
+                    if (!authentication?.accessToken) {
+                        throw new Error('No access token received');
+                    }
+
+                    await storeAuthToken(authentication.accessToken);
+
+                    console.log('[Auth Debug] Fetching user info...');
+                    const userInfoResponse = await fetch(
+                        'https://www.googleapis.com/userinfo/v2/me',
+                        {
+                            headers: { Authorization: `Bearer ${authentication.accessToken}` },
+                        }
+                    );
+
+                    if (!userInfoResponse.ok) {
+                        throw new Error('Failed to fetch user info');
+                    }
+
+                    const userData = await userInfoResponse.json();
+                    console.log('[Auth Debug] User info received:', userData.email);
+
+                    const user: User = {
+                        id: userData.id,
+                        email: userData.email,
+                        name: userData.name,
+                        picture: userData.picture,
+                    };
+
+                    await storeUser(user);
+                    setUser(user);
+                }
+
                 setIsGuest(false);
+            } else {
+                console.log('[Auth Debug] Authentication cancelled or failed');
+                throw new Error('Authentication cancelled or failed');
             }
         } catch (error) {
-            console.error('Error signing in:', error);
+            console.error('[Auth Debug] Sign in error:', error);
             throw error;
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const signInAsGuest = () => {
+        console.log('[Auth Debug] Signing in as guest');
         setIsGuest(true);
         setUser(null);
     };
 
     const signOut = async () => {
         try {
+            setIsLoading(true);
+            console.log('[Auth Debug] Signing out...');
             await logout();
             setUser(null);
             setIsGuest(false);
         } catch (error) {
-            console.error('Error signing out:', error);
+            console.error('[Auth Debug] Error signing out:', error);
             throw error;
+        } finally {
+            setIsLoading(false);
         }
     };
 

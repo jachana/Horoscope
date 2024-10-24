@@ -23,18 +23,34 @@ export const useGoogleAuth = () => {
         default: ENV.GOOGLE_CLIENT_ID,
     });
 
-    console.log('[Auth Debug] Using client ID:', clientId);
+    // Add more detailed debug logging
+    console.log('[Auth Debug] Environment:', {
+        platform: Platform.OS,
+        clientId,
+        webRedirectUri: window.location.origin
+    });
 
     const [request, response, promptAsync] = Google.useAuthRequest({
         clientId,
         scopes: ['profile', 'email'],
         redirectUri: Platform.select({
-            web: 'http://localhost:19006', // Default Expo web port
-            default: undefined, // Let Expo handle mobile redirects
+            // Use the current origin for web
+            web: window.location.origin,
+            default: undefined,
         }),
-        webOptions: {
-            popup: false // Use redirect instead of popup to avoid COOP issues
-        }
+        // Configure auth based on platform
+        ...(Platform.OS === 'web' ? {
+            responseType: "id_token",
+            usePKCE: false,
+            // Use Google's own popup mechanism
+            customParams: {
+                prompt: "select_account",
+                access_type: "online",
+            }
+        } : {
+            responseType: "code",
+            usePKCE: true
+        })
     });
 
     if (request) {
@@ -42,6 +58,9 @@ export const useGoogleAuth = () => {
             url: request.url,
             scopes: request.scopes,
             clientId: request.clientId,
+            redirectUri: request.redirectUri,
+            responseType: request.responseType,
+            usePKCE: request.usePKCE
         });
     }
 
@@ -58,7 +77,16 @@ export const useGoogleAuth = () => {
         promptAsync: async () => {
             try {
                 console.log('[Auth Debug] Initiating Google Auth prompt...');
-                const result = await promptAsync();
+                // For web, use a popup window with correct type
+                const options = Platform.OS === 'web' ? {
+                    windowFeatures: {
+                        width: 600,
+                        height: 700,
+                        centerScreen: true
+                    }
+                } : undefined;
+
+                const result = await promptAsync(options);
                 console.log('[Auth Debug] Prompt result:', {
                     type: result.type,
                     params: result.type === 'success' ? result.authentication : null,
@@ -72,10 +100,62 @@ export const useGoogleAuth = () => {
     };
 };
 
+const isWeb = Platform.OS === 'web';
+
+// Web storage fallback
+const webStorage = {
+    setItem: (key: string, value: string) => {
+        try {
+            localStorage.setItem(key, value);
+            return Promise.resolve();
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    },
+    getItem: (key: string) => {
+        try {
+            const value = localStorage.getItem(key);
+            return Promise.resolve(value);
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    },
+    deleteItem: (key: string) => {
+        try {
+            localStorage.removeItem(key);
+            return Promise.resolve();
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    }
+};
+
+// Storage interface that works across platforms
+const storage = {
+    setItem: async (key: string, value: string) => {
+        if (isWeb) {
+            return webStorage.setItem(key, value);
+        }
+        return SecureStore.setItemAsync(key, value);
+    },
+    getItem: async (key: string) => {
+        if (isWeb) {
+            return webStorage.getItem(key);
+        }
+        return SecureStore.getItemAsync(key);
+    },
+    deleteItem: async (key: string) => {
+        if (isWeb) {
+            return webStorage.deleteItem(key);
+        }
+        return SecureStore.deleteItemAsync(key);
+    }
+};
+
 export const storeAuthToken = async (token: string) => {
     try {
         console.log('[Auth Debug] Storing auth token...');
-        await SecureStore.setItem(AUTH_KEY, token);
+        await storage.setItem(AUTH_KEY, token);
         console.log('[Auth Debug] Auth token stored successfully');
     } catch (error) {
         console.error('[Auth Debug] Error storing auth token:', error);
@@ -86,7 +166,7 @@ export const storeAuthToken = async (token: string) => {
 export const getAuthToken = async () => {
     try {
         console.log('[Auth Debug] Retrieving auth token...');
-        const token = await SecureStore.getItem(AUTH_KEY);
+        const token = await storage.getItem(AUTH_KEY);
         console.log('[Auth Debug] Auth token retrieved:', token ? 'Found' : 'Not found');
         return token;
     } catch (error) {
@@ -98,7 +178,7 @@ export const getAuthToken = async () => {
 export const storeUser = async (user: User) => {
     try {
         console.log('[Auth Debug] Storing user data...');
-        await SecureStore.setItem(USER_KEY, JSON.stringify(user));
+        await storage.setItem(USER_KEY, JSON.stringify(user));
         console.log('[Auth Debug] User data stored successfully');
     } catch (error) {
         console.error('[Auth Debug] Error storing user data:', error);
@@ -109,7 +189,7 @@ export const storeUser = async (user: User) => {
 export const getUser = async (): Promise<User | null> => {
     try {
         console.log('[Auth Debug] Retrieving user data...');
-        const userData = await SecureStore.getItem(USER_KEY);
+        const userData = await storage.getItem(USER_KEY);
         console.log('[Auth Debug] User data retrieved:', userData ? 'Found' : 'Not found');
         return userData ? JSON.parse(userData) : null;
     } catch (error) {
@@ -121,8 +201,8 @@ export const getUser = async (): Promise<User | null> => {
 export const logout = async () => {
     try {
         console.log('[Auth Debug] Logging out...');
-        await SecureStore.deleteItem(AUTH_KEY);
-        await SecureStore.deleteItem(USER_KEY);
+        await storage.deleteItem(AUTH_KEY);
+        await storage.deleteItem(USER_KEY);
         console.log('[Auth Debug] Logout successful');
     } catch (error) {
         console.error('[Auth Debug] Error during logout:', error);
