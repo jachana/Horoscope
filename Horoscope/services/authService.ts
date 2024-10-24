@@ -72,7 +72,7 @@ export const useGoogleAuth = () => {
 export const storeAuthToken = async (token: string) => {
     try {
         console.log('[Auth Debug] Storing auth token...');
-        await SecureStore.setItemAsync(AUTH_KEY, token);
+        await SecureStore.setItem(AUTH_KEY, token);
         console.log('[Auth Debug] Auth token stored successfully');
     } catch (error) {
         console.error('[Auth Debug] Error storing auth token:', error);
@@ -83,7 +83,7 @@ export const storeAuthToken = async (token: string) => {
 export const getAuthToken = async () => {
     try {
         console.log('[Auth Debug] Retrieving auth token...');
-        const token = await SecureStore.getItemAsync(AUTH_KEY);
+        const token = await SecureStore.getItem(AUTH_KEY);
         console.log('[Auth Debug] Auth token retrieved:', token ? 'Found' : 'Not found');
         return token;
     } catch (error) {
@@ -95,7 +95,7 @@ export const getAuthToken = async () => {
 export const storeUser = async (user: User) => {
     try {
         console.log('[Auth Debug] Storing user data...');
-        await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
+        await SecureStore.setItem(USER_KEY, JSON.stringify(user));
         console.log('[Auth Debug] User data stored successfully');
     } catch (error) {
         console.error('[Auth Debug] Error storing user data:', error);
@@ -106,7 +106,7 @@ export const storeUser = async (user: User) => {
 export const getUser = async (): Promise<User | null> => {
     try {
         console.log('[Auth Debug] Retrieving user data...');
-        const userData = await SecureStore.getItemAsync(USER_KEY);
+        const userData = await SecureStore.getItem(USER_KEY);
         console.log('[Auth Debug] User data retrieved:', userData ? 'Found' : 'Not found');
         return userData ? JSON.parse(userData) : null;
     } catch (error) {
@@ -118,8 +118,8 @@ export const getUser = async (): Promise<User | null> => {
 export const logout = async () => {
     try {
         console.log('[Auth Debug] Logging out...');
-        await SecureStore.deleteItemAsync(AUTH_KEY);
-        await SecureStore.deleteItemAsync(USER_KEY);
+        await SecureStore.deleteItem(AUTH_KEY);
+        await SecureStore.deleteItem(USER_KEY);
         console.log('[Auth Debug] Logout successful');
     } catch (error) {
         console.error('[Auth Debug] Error during logout:', error);
