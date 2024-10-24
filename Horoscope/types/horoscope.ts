@@ -7,6 +7,14 @@ export interface HoroscopeReading {
     sign: ZodiacSign;
     reading: string;
     date: string;
+    luckyNumbers: string[];
+    planetaryPositions: {
+        planet: string;
+        position: string;
+    }[];
+    compatibleSigns: ZodiacSign[];
+    luckyColor: string;
+    bestTimeForDecisions: string;
 }
 
 export interface OpenRouterResponse {
