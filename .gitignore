@@ -1,6 +1,18 @@
 .aider*
 # Project directories
-Horoscope/
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Build artifacts
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
 
 # System Files
 .DS_Store
@@ -15,3 +27,20 @@ Thumbs.db
 # Environment
 .env
 .env.*
+!.env.example
+
+# iOS
+Horoscope/ios/Pods/
+Horoscope/ios/build/
+
+# Android
+Horoscope/android/app/build/
+Horoscope/android/build/
+Horoscope/android/.gradle/
+Horoscope/android/local.properties
+
+# TypeScript
+*.tsbuildinfo
+
+# Metro
+.metro-health-check*

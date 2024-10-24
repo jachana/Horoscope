@@ -1,15 +1,27 @@
-import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ScrollView, TextInput, TouchableOpacity, Platform, ImageBackground } from 'react-native';
 import { Text } from 'react-native';
-import { useState, useEffect } from 'react';
-import { ZodiacImage } from '../../components/ZodiacImage';
+import { useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Platform } from 'react-native';
-import { useHoroscope } from '../../hooks/useHoroscope';
+import { ZodiacImage } from '../../components/ZodiacImage';
 import { ZodiacSign } from '../../types/horoscope';
-import { FontAwesome } from '@expo/vector-icons';
+
+const zodiacColors: Record<ZodiacSign, string> = {
+  Aries: '#FF4136',
+  Taurus: '#2ECC40',
+  Gemini: '#FFDC00',
+  Cancer: '#B10DC9',
+  Leo: '#FF851B',
+  Virgo: '#7FDBFF',
+  Libra: '#F012BE',
+  Scorpio: '#85144b',
+  Sagittarius: '#39CCCC',
+  Capricorn: '#01FF70',
+  Aquarius: '#0074D9',
+  Pisces: '#3D9970'
+};
 
 const getZodiacSign = (date: Date): ZodiacSign => {
-  const month = date.getMonth() + 1; // JavaScript months are 0-11
+  const month = date.getMonth() + 1;
   const day = date.getDate();
 
   if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return 'Aries';
@@ -26,29 +38,69 @@ const getZodiacSign = (date: Date): ZodiacSign => {
   return 'Pisces';
 };
 
-export default function DailyHoroscopeScreen() {
+interface InputFieldProps {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  multiline?: boolean;
+}
+
+const InputField = ({ label, value, onChangeText, placeholder, multiline = false }: InputFieldProps) => (
+  <View style={styles.inputContainer}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <TextInput
+      style={[styles.input, multiline && styles.multilineInput]}
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor="#999"
+      multiline={multiline}
+    />
+  </View>
+);
+
+const WebDatePicker = ({ value, onChange }: { value: Date; onChange: (date: Date) => void }) => {
+  return (
+    <input
+      type="date"
+      value={value.toISOString().split('T')[0]}
+      onChange={(e) => {
+        const date = new Date(e.target.value);
+        onChange(date);
+      }}
+      style={{
+        fontSize: '16px',
+        padding: '12px',
+        borderRadius: '8px',
+        border: '1px solid #ddd',
+        backgroundColor: '#f8f8f8',
+        color: '#333',
+        width: '100%',
+      }}
+    />
+  );
+};
+
+export default function ProfileScreen() {
   const [birthday, setBirthday] = useState(new Date());
   const [showPicker, setShowPicker] = useState(Platform.OS === 'ios');
+  const [birthTime, setBirthTime] = useState('');
+  const [birthPlace, setBirthPlace] = useState('');
+  const [lifeGoals, setLifeGoals] = useState('');
+  const [heritage, setHeritage] = useState('');
+  const [relationshipStatus, setRelationshipStatus] = useState('');
+
   const zodiacSign = getZodiacSign(birthday);
-  const { loading, error, reading, getReading } = useHoroscope();
+  const backgroundImage = require('../../assets/images/Backgrounds/Aries.jpg');
 
-  useEffect(() => {
-    getReading(zodiacSign);
-  }, [zodiacSign]);
+  const renderDatePicker = () => {
+    if (Platform.OS === 'web') {
+      return <WebDatePicker value={birthday} onChange={setBirthday} />;
+    }
 
-  const handleRefresh = () => {
-    getReading(zodiacSign);
-  };
-
-  return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Daily Horoscope</Text>
-        <Text style={styles.subtitle}>Discover what the stars have in store for you today</Text>
-      </View>
-
-      <View style={styles.birthdayContainer}>
-        <Text style={styles.birthdayLabel}>Select your birthday:</Text>
+    return (
+      <>
         {(showPicker || Platform.OS === 'ios') && (
           <DateTimePicker
             value={birthday}
@@ -64,57 +116,91 @@ export default function DailyHoroscopeScreen() {
             }}
           />
         )}
-        {Platform.OS === 'android' && (
-          <Text
-            style={[styles.birthdayLabel, { color: '#6B4DE6' }]}
-            onPress={() => setShowPicker(true)}
-          >
-            {birthday.toLocaleDateString()}
-          </Text>
-        )}
-      </View>
-
-      <View style={styles.readingContainer}>
-        <View style={styles.readingHeader}>
-          <Text style={styles.readingTitle}>Your Daily Reading</Text>
-          <TouchableOpacity onPress={handleRefresh} style={styles.refreshButton}>
-            <FontAwesome name="refresh" size={20} color="#6B4DE6" />
+        {Platform.OS === 'android' && !showPicker && (
+          <TouchableOpacity onPress={() => setShowPicker(true)}>
+            <Text style={styles.dateText}>{birthday.toLocaleDateString()}</Text>
           </TouchableOpacity>
-        </View>
-        <View style={styles.selectedSignHeader}>
-          <ZodiacImage sign={zodiacSign} size={32} />
-          <Text style={styles.selectedSignText}>{zodiacSign}</Text>
-        </View>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#6B4DE6" />
-            <Text style={styles.loadingText}>Consulting the stars...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={handleRefresh} style={styles.retryButton}>
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </TouchableOpacity>
-          </View>
-        ) : reading ? (
-          <Text style={styles.readingText}>{reading.reading}</Text>
-        ) : (
-          <Text style={styles.readingText}>Select your birthday to see your horoscope</Text>
         )}
-      </View>
-    </ScrollView>
+      </>
+    );
+  };
+
+  return (
+    <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
+      <ScrollView style={styles.container}>
+        <View style={[styles.header]}>
+          <Text style={styles.title}>Profile</Text>
+          <Text style={styles.subtitle}>Your Personal Information</Text>
+        </View>
+
+        <View style={styles.content}>
+          <View style={styles.zodiacContainer}>
+            <View style={styles.zodiacContent}>
+              <ZodiacImage sign={zodiacSign} size={120} />
+            </View>
+            <Text style={styles.zodiacText}>{zodiacSign}</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Birth Information</Text>
+            <View style={styles.birthdayContainer}>
+              <Text style={styles.fieldLabel}>Date of Birth</Text>
+              {renderDatePicker()}
+            </View>
+            <InputField
+              label="Time of Birth"
+              value={birthTime}
+              onChangeText={setBirthTime}
+              placeholder="e.g., 14:30"
+            />
+            <InputField
+              label="Place of Birth"
+              value={birthPlace}
+              onChangeText={setBirthPlace}
+              placeholder="City, Country"
+            />
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Personal Details</Text>
+            <InputField
+              label="Heritage"
+              value={heritage}
+              onChangeText={setHeritage}
+              placeholder="Cultural background"
+            />
+            <InputField
+              label="Relationship Status"
+              value={relationshipStatus}
+              onChangeText={setRelationshipStatus}
+              placeholder="Single, Married, etc."
+            />
+            <InputField
+              label="Life Goals"
+              value={lifeGoals}
+              onChangeText={setLifeGoals}
+              placeholder="Share your aspirations..."
+              multiline={true}
+            />
+          </View>
+        </View>
+      </ScrollView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent white
   },
   header: {
     padding: 20,
-    backgroundColor: '#6B4DE6',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   title: {
     fontSize: 28,
@@ -127,85 +213,91 @@ const styles = StyleSheet.create({
     color: '#fff',
     opacity: 0.8,
   },
-  birthdayContainer: {
+  content: {
     padding: 20,
-    backgroundColor: '#fff',
-    alignItems: 'center',
   },
-  birthdayLabel: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 10,
-  },
-  readingContainer: {
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)', // More opaque white
     padding: 20,
-    backgroundColor: '#fff',
-    margin: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  readingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  birthdayContainer: {
     marginBottom: 15,
   },
-  readingTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#333',
-  },
-  refreshButton: {
-    padding: 8,
-  },
-  selectedSignHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-    padding: 10,
-    borderRadius: 8,
     marginBottom: 15,
   },
-  selectedSignText: {
+  fieldLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  dateText: {
     fontSize: 16,
-    fontWeight: '500',
+    color: '#6B4DE6',
+    paddingVertical: 8,
+  },
+  zodiacContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    alignItems: 'center',
+  },
+  zodiacContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  zodiacText: {
+    fontSize: 28,
+    fontWeight: '600',
     color: '#333',
-    marginLeft: 10,
-  },
-  readingText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#666',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
-  },
-  errorContainer: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#ff4444',
     textAlign: 'center',
+  },
+  inputContainer: {
     marginBottom: 15,
   },
-  retryButton: {
-    backgroundColor: '#6B4DE6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+  inputLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
   },
-  retryButtonText: {
-    color: '#fff',
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
     fontSize: 16,
-    fontWeight: '500',
+    color: '#333',
+    backgroundColor: '#f8f8f8',
+  },
+  multilineInput: {
+    height: 100,
+    textAlignVertical: 'top',
   },
 });
