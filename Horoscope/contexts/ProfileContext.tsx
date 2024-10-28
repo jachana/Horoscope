@@ -86,3 +86,45 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
         </ProfileContext.Provider>
     );
 };
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { UserProfile, getUserProfile } from '../services/profileService';
+import { useAuth } from './AuthContext';
+
+interface ProfileContextType {
+  profile: UserProfile | null;
+  setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+}
+
+const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
+
+export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (user) {
+        const userProfile = await getUserProfile(user.id);
+        setProfile(userProfile);
+      } else {
+        setProfile(null);
+      }
+    };
+
+    loadProfile();
+  }, [user]);
+
+  return (
+    <ProfileContext.Provider value={{ profile, setProfile }}>
+      {children}
+    </ProfileContext.Provider>
+  );
+};
+
+export const useProfile = () => {
+  const context = useContext(ProfileContext);
+  if (context === undefined) {
+    throw new Error('useProfile must be used within a ProfileProvider');
+  }
+  return context;
+};
