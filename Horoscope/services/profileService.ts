@@ -19,6 +19,7 @@ export interface UserProfile {
     subscription: {
         tier: SubscriptionTier;
         expiresAt?: string; // ISO date string
+        trialStartDate?: string; // ISO date string for the start of the free trial
     };
     lastUpdated: string;
 }
@@ -144,9 +145,15 @@ export const updateUserProfile = async (
         const updatedSubscription = updates.subscription
             ? {
                 tier: updates.subscription.tier || baseProfile.subscription.tier,
-                expiresAt: updates.subscription.expiresAt
+                expiresAt: updates.subscription.expiresAt,
+                trialStartDate: updates.subscription.trialStartDate || baseProfile.subscription.trialStartDate
             }
             : baseProfile.subscription;
+
+        // If upgrading to premium and no trial has been started, set the trial start date
+        if (updatedSubscription.tier === 'premium' && !updatedSubscription.trialStartDate) {
+            updatedSubscription.trialStartDate = new Date().toISOString();
+        }
 
         const updatedProfile: UserProfile = {
             ...baseProfile,
@@ -187,5 +194,13 @@ export const checkSubscriptionAccess = (profile: UserProfile | null): boolean =>
         }
         return true; // Premium with no expiration
     }
-    return false; // Free tier
+
+    // Check for free trial
+    if (subscription.trialStartDate) {
+        const trialEndDate = new Date(subscription.trialStartDate);
+        trialEndDate.setDate(trialEndDate.getDate() + 7); // 7 days trial
+        return new Date() < trialEndDate;
+    }
+
+    return false; // Free tier, no trial
 };

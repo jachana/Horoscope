@@ -137,7 +137,7 @@ export async function generateHoroscopeReading(sign: ZodiacSign, profile: UserPr
 
 export async function generateDreamReading(description: string, profile: UserProfile | null): Promise<string> {
     if (!checkSubscriptionAccess(profile)) {
-        throw new SubscriptionError('Dream readings are a premium feature. Upgrade to access detailed dream interpretations!');
+        throw new SubscriptionError('Dream readings are a premium feature. Start your 1-week free trial or upgrade to access detailed dream interpretations!');
     }
 
     // Implementation for premium dream reading
@@ -147,7 +147,7 @@ export async function generateDreamReading(description: string, profile: UserPro
 
 export async function generatePalmReading(profile: UserProfile | null): Promise<string> {
     if (!checkSubscriptionAccess(profile)) {
-        throw new SubscriptionError('Palm readings are a premium feature. Upgrade to access personalized palm interpretations!');
+        throw new SubscriptionError('Palm readings are a premium feature. Start your 1-week free trial or upgrade to access personalized palm interpretations!');
     }
 
     // Implementation for premium palm reading
@@ -156,39 +156,39 @@ export async function generatePalmReading(profile: UserProfile | null): Promise<
 }
 
 export async function generateWeeklyReading(sign: ZodiacSign, profile: UserProfile | null): Promise<HoroscopeReading> {
-  if (!checkSubscriptionAccess(profile)) {
-    throw new SubscriptionError('Weekly readings are a premium feature. Upgrade to access detailed weekly forecasts!');
-  }
+    if (!checkSubscriptionAccess(profile)) {
+        throw new SubscriptionError('Weekly readings are a premium feature. Start your 1-week free trial or upgrade to access detailed weekly forecasts!');
+    }
 
-  // Implementation for weekly reading
-  // TODO: Implement weekly reading logic similar to daily reading
-  return {
-    sign,
-    reading: "Weekly reading coming soon!",
-    date: new Date().toISOString().split('T')[0],
-    luckyNumbers: [],
-    planetaryPositions: [],
-    compatibleSigns: [],
-    luckyColor: '',
-    bestTimeForDecisions: '',
-  };
+    // Implementation for weekly reading
+    // TODO: Implement weekly reading logic similar to daily reading
+    return {
+        sign,
+        reading: "Weekly reading coming soon!",
+        date: new Date().toISOString().split('T')[0],
+        luckyNumbers: [],
+        planetaryPositions: [],
+        compatibleSigns: [],
+        luckyColor: '',
+        bestTimeForDecisions: '',
+    };
 }
 
 export async function generateMonthlyReading(sign: ZodiacSign, profile: UserProfile | null): Promise<HoroscopeReading> {
-  if (!checkSubscriptionAccess(profile)) {
-    throw new SubscriptionError('Monthly readings are a premium feature. Upgrade to access detailed monthly forecasts!');
-  }
+    if (!checkSubscriptionAccess(profile)) {
+        throw new SubscriptionError('Monthly readings are a premium feature. Start your 1-week free trial or upgrade to access detailed monthly forecasts!');
+    }
 
-  // Implementation for monthly reading
-  // TODO: Implement monthly reading logic similar to daily reading
-  return {
-    sign,
-    reading: "Monthly reading coming soon!",
-    date: new Date().toISOString().split('T')[0],
-    luckyNumbers: [],
-    planetaryPositions: [],
-    compatibleSigns: [],
-    luckyColor: '',
-    bestTimeForDecisions: '',
-  };
+    // Implementation for monthly reading
+    // TODO: Implement monthly reading logic similar to daily reading
+    return {
+        sign,
+        reading: "Monthly reading coming soon!",
+        date: new Date().toISOString().split('T')[0],
+        luckyNumbers: [],
+        planetaryPositions: [],
+        compatibleSigns: [],
+        luckyColor: '',
+        bestTimeForDecisions: '',
+    };
 }
