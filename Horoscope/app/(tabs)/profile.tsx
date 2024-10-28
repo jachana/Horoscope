@@ -82,6 +82,21 @@ export default function ProfileScreen() {
                     <ThemedText style={styles.logoutText}>Sign Out</ThemedText>
                 </TouchableOpacity>
             </ThemedView>
+
+            <ThemedView style={styles.subscriptionSection}>
+              <ThemedText style={styles.subscriptionTitle}>Subscription</ThemedText>
+              <ThemedText style={styles.subscriptionStatus}>
+                Current plan: {user?.subscription?.tier === 'premium' ? 'Premium' : 'Free'}
+              </ThemedText>
+              {user?.subscription?.tier !== 'premium' && (
+                <TouchableOpacity
+                  style={styles.upgradeButton}
+                  onPress={() => {/* Implement upgrade logic */}}
+                >
+                  <ThemedText style={styles.upgradeButtonText}>Upgrade to Premium</ThemedText>
+                </TouchableOpacity>
+              )}
+            </ThemedView>
         </ThemedView>
     );
 }
@@ -155,5 +170,31 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#FF3B30',
         fontWeight: '600',
+    },
+    subscriptionSection: {
+      marginTop: 20,
+      padding: 15,
+      backgroundColor: 'rgba(0, 122, 255, 0.1)',
+      borderRadius: 10,
+    },
+    subscriptionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 10,
+    },
+    subscriptionStatus: {
+      fontSize: 16,
+      marginBottom: 10,
+    },
+    upgradeButton: {
+      backgroundColor: '#007AFF',
+      padding: 10,
+      borderRadius: 5,
+      alignItems: 'center',
+    },
+    upgradeButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
     },
 });

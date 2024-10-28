@@ -154,3 +154,41 @@ export async function generatePalmReading(profile: UserProfile | null): Promise<
     // TODO: Implement palm reading logic
     return "Premium palm reading feature coming soon!";
 }
+
+export async function generateWeeklyReading(sign: ZodiacSign, profile: UserProfile | null): Promise<HoroscopeReading> {
+  if (!checkSubscriptionAccess(profile)) {
+    throw new SubscriptionError('Weekly readings are a premium feature. Upgrade to access detailed weekly forecasts!');
+  }
+
+  // Implementation for weekly reading
+  // TODO: Implement weekly reading logic similar to daily reading
+  return {
+    sign,
+    reading: "Weekly reading coming soon!",
+    date: new Date().toISOString().split('T')[0],
+    luckyNumbers: [],
+    planetaryPositions: [],
+    compatibleSigns: [],
+    luckyColor: '',
+    bestTimeForDecisions: '',
+  };
+}
+
+export async function generateMonthlyReading(sign: ZodiacSign, profile: UserProfile | null): Promise<HoroscopeReading> {
+  if (!checkSubscriptionAccess(profile)) {
+    throw new SubscriptionError('Monthly readings are a premium feature. Upgrade to access detailed monthly forecasts!');
+  }
+
+  // Implementation for monthly reading
+  // TODO: Implement monthly reading logic similar to daily reading
+  return {
+    sign,
+    reading: "Monthly reading coming soon!",
+    date: new Date().toISOString().split('T')[0],
+    luckyNumbers: [],
+    planetaryPositions: [],
+    compatibleSigns: [],
+    luckyColor: '',
+    bestTimeForDecisions: '',
+  };
+}

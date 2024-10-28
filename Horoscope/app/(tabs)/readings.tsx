@@ -1,5 +1,6 @@
 import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native';
+import { PremiumFeature } from '../../components/PremiumFeature';
 
 export default function ReadingsScreen() {
   return (
@@ -10,26 +11,28 @@ export default function ReadingsScreen() {
       </View>
 
       <View style={styles.content}>
-        <TouchableOpacity style={styles.readingCard}>
-          <Text style={styles.cardTitle}>Weekly Reading</Text>
-          <Text style={styles.cardDescription}>
-            Get a detailed forecast for the upcoming week
-          </Text>
-        </TouchableOpacity>
+        <PremiumFeature>
+          <TouchableOpacity style={styles.readingCard}>
+            <Text style={styles.cardTitle}>Weekly Reading</Text>
+            <Text style={styles.cardDescription}>
+              Get a detailed forecast for the upcoming week
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.readingCard}>
-          <Text style={styles.cardTitle}>Monthly Reading</Text>
-          <Text style={styles.cardDescription}>
-            Discover major astrological influences for the month ahead
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.readingCard}>
+            <Text style={styles.cardTitle}>Monthly Reading</Text>
+            <Text style={styles.cardDescription}>
+              Discover major astrological influences for the month ahead
+            </Text>
+          </TouchableOpacity>
+        </PremiumFeature>
 
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>About Extended Readings</Text>
           <Text style={styles.infoText}>
             Our extended readings use advanced astrological calculations and AI 
-            to provide deeper insights into your future. Select your preferred 
-            timeframe above to begin.
+            to provide deeper insights into your future. Upgrade to premium to access 
+            these detailed weekly and monthly forecasts.
           </Text>
         </View>
       </View>

@@ -1,6 +1,7 @@
 import { StyleSheet, View, ScrollView, TextInput } from 'react-native';
 import { Text } from 'react-native';
 import { useState } from 'react';
+import { PremiumFeature } from '../../components/PremiumFeature';
 
 export default function DreamAnalysisScreen() {
   const [dreamDescription, setDreamDescription] = useState('');
@@ -13,27 +14,29 @@ export default function DreamAnalysisScreen() {
       </View>
 
       <View style={styles.content}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Describe your dream</Text>
-          <TextInput
-            style={styles.input}
-            multiline
-            numberOfLines={6}
-            placeholder="Write about your dream in detail..."
-            value={dreamDescription}
-            onChangeText={setDreamDescription}
-            textAlignVertical="top"
-          />
-        </View>
-
-        {dreamDescription.length > 0 && (
-          <View style={styles.analysisContainer}>
-            <Text style={styles.analysisTitle}>Dream Analysis</Text>
-            <Text style={styles.analysisText}>
-              Loading your dream analysis...
-            </Text>
+        <PremiumFeature>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Describe your dream</Text>
+            <TextInput
+              style={styles.input}
+              multiline
+              numberOfLines={6}
+              placeholder="Write about your dream in detail..."
+              value={dreamDescription}
+              onChangeText={setDreamDescription}
+              textAlignVertical="top"
+            />
           </View>
-        )}
+
+          {dreamDescription.length > 0 && (
+            <View style={styles.analysisContainer}>
+              <Text style={styles.analysisTitle}>Dream Analysis</Text>
+              <Text style={styles.analysisText}>
+                Loading your dream analysis...
+              </Text>
+            </View>
+          )}
+        </PremiumFeature>
 
         <View style={styles.tipsContainer}>
           <Text style={styles.tipsTitle}>Tips for Dream Journaling</Text>
