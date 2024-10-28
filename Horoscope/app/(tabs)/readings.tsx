@@ -1,8 +1,44 @@
-import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text } from 'react-native';
 import { PremiumFeature } from '../../components/PremiumFeature';
+import { useProfile } from '../../contexts/ProfileContext';
+import { generateWeeklyReading, generateMonthlyReading } from '../../services/horoscopeService';
+import { HoroscopeReading } from '../../types/horoscope';
 
 export default function ReadingsScreen() {
+  const { profile } = useProfile();
+  const [weeklyReading, setWeeklyReading] = useState<HoroscopeReading | null>(null);
+  const [monthlyReading, setMonthlyReading] = useState<HoroscopeReading | null>(null);
+  const [loading, setLoading] = useState<'weekly' | 'monthly' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleWeeklyReading = async () => {
+    setLoading('weekly');
+    setError(null);
+    try {
+      const reading = await generateWeeklyReading(profile?.zodiacSign || 'Aries', profile);
+      setWeeklyReading(reading);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate weekly reading');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleMonthlyReading = async () => {
+    setLoading('monthly');
+    setError(null);
+    try {
+      const reading = await generateMonthlyReading(profile?.zodiacSign || 'Aries', profile);
+      setMonthlyReading(reading);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate monthly reading');
+    } finally {
+      setLoading(null);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -12,20 +48,40 @@ export default function ReadingsScreen() {
 
       <View style={styles.content}>
         <PremiumFeature>
-          <TouchableOpacity style={styles.readingCard}>
+          <TouchableOpacity style={styles.readingCard} onPress={handleWeeklyReading} disabled={loading === 'weekly'}>
             <Text style={styles.cardTitle}>Weekly Reading</Text>
             <Text style={styles.cardDescription}>
               Get a detailed forecast for the upcoming week
             </Text>
+            {loading === 'weekly' && <ActivityIndicator style={styles.loader} />}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.readingCard}>
+          {weeklyReading && (
+            <View style={styles.readingResult}>
+              <Text style={styles.readingText}>{weeklyReading.reading}</Text>
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.readingCard} onPress={handleMonthlyReading} disabled={loading === 'monthly'}>
             <Text style={styles.cardTitle}>Monthly Reading</Text>
             <Text style={styles.cardDescription}>
               Discover major astrological influences for the month ahead
             </Text>
+            {loading === 'monthly' && <ActivityIndicator style={styles.loader} />}
           </TouchableOpacity>
+
+          {monthlyReading && (
+            <View style={styles.readingResult}>
+              <Text style={styles.readingText}>{monthlyReading.reading}</Text>
+            </View>
+          )}
         </PremiumFeature>
+
+        {error && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>About Extended Readings</Text>

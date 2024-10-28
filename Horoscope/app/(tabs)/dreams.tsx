@@ -1,10 +1,34 @@
-import { StyleSheet, View, ScrollView, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text } from 'react-native';
-import { useState } from 'react';
 import { PremiumFeature } from '../../components/PremiumFeature';
+import { useProfile } from '../../contexts/ProfileContext';
+import { generateDreamReading } from '../../services/horoscopeService';
 
 export default function DreamAnalysisScreen() {
   const [dreamDescription, setDreamDescription] = useState('');
+  const [dreamAnalysis, setDreamAnalysis] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { profile } = useProfile();
+
+  const handleDreamAnalysis = async () => {
+    if (dreamDescription.trim().length === 0) {
+      setError('Please enter a dream description');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const analysis = await generateDreamReading(dreamDescription, profile);
+      setDreamAnalysis(analysis);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate dream analysis');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -28,12 +52,26 @@ export default function DreamAnalysisScreen() {
             />
           </View>
 
-          {dreamDescription.length > 0 && (
+          <TouchableOpacity
+            style={styles.analyzeButton}
+            onPress={handleDreamAnalysis}
+            disabled={loading}
+          >
+            <Text style={styles.analyzeButtonText}>Analyze Dream</Text>
+          </TouchableOpacity>
+
+          {loading && <ActivityIndicator style={styles.loader} />}
+
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {dreamAnalysis && (
             <View style={styles.analysisContainer}>
               <Text style={styles.analysisTitle}>Dream Analysis</Text>
-              <Text style={styles.analysisText}>
-                Loading your dream analysis...
-              </Text>
+              <Text style={styles.analysisText}>{dreamAnalysis}</Text>
             </View>
           )}
         </PremiumFeature>
