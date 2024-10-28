@@ -43,37 +43,23 @@ export default function RootLayout() {
     <AuthProvider>
       <ProfileProvider>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack>
             <Stack.Screen
               name="login"
               options={{
-                animation: 'none'
+                animation: 'none',
+                headerShown: false,
               }}
             />
             <Stack.Screen
               name="(tabs)"
               options={{
-                animation: 'none'
+                animation: 'none',
+                headerShown: false,
               }}
             />
           </Stack>
         </ThemeProvider>
-      </ProfileProvider>
-    </AuthProvider>
-  );
-}
-import React from 'react';
-import { Stack } from 'expo-router';
-import { AuthProvider } from '../contexts/AuthContext';
-import { ProfileProvider } from '../contexts/ProfileContext';
-
-export default function RootLayout() {
-  return (
-    <AuthProvider>
-      <ProfileProvider>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
       </ProfileProvider>
     </AuthProvider>
   );
