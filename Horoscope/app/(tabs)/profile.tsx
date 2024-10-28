@@ -91,7 +91,7 @@ export default function ProfileScreen() {
               {user?.subscription?.tier !== 'premium' && (
                 <TouchableOpacity
                   style={styles.upgradeButton}
-                  onPress={() => {/* Implement upgrade logic */}}
+                  onPress={() => router.push('/upgrade')}
                 >
                   <ThemedText style={styles.upgradeButtonText}>Upgrade to Premium</ThemedText>
                 </TouchableOpacity>

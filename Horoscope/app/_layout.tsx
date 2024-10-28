@@ -62,3 +62,19 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+import React from 'react';
+import { Stack } from 'expo-router';
+import { AuthProvider } from '../contexts/AuthContext';
+import { ProfileProvider } from '../contexts/ProfileContext';
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <ProfileProvider>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+      </ProfileProvider>
+    </AuthProvider>
+  );
+}
