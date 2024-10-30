@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useProfile } from '../contexts/ProfileContext';
@@ -8,15 +8,30 @@ interface PremiumFeatureProps {
 }
 
 export const PremiumFeature: React.FC<PremiumFeatureProps> = ({ children }) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();  // Using any temporarily for navigation
   const { profile } = useProfile();
+  const [debugPremium, setDebugPremium] = useState(false);
 
-  if (profile?.subscription?.tier === 'premium') {
-    return <>{children}</>;
+  // Check if user is premium either through profile or debug mode
+  const isPremium = profile?.subscription?.tier === 'premium' || debugPremium;
+
+  if (isPremium) {
+    return (
+      <TouchableOpacity
+        onLongPress={() => setDebugPremium(false)}
+        delayLongPress={1000}
+      >
+        {children}
+      </TouchableOpacity>
+    );
   }
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity
+      onLongPress={() => setDebugPremium(true)}
+      delayLongPress={1000}
+      style={styles.container}
+    >
       <Text style={styles.text}>This feature is only available for premium users.</Text>
       <TouchableOpacity
         style={styles.button}
@@ -24,7 +39,7 @@ export const PremiumFeature: React.FC<PremiumFeatureProps> = ({ children }) => {
       >
         <Text style={styles.buttonText}>Upgrade to Premium</Text>
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 };
 

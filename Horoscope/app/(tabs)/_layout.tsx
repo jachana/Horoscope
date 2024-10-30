@@ -53,6 +53,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="palm"
+        options={{
+          title: 'Palm Reading',
+          tabBarIcon: ({ color }) => <TabBarIcon name="hand-o-up" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
